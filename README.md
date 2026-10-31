@@ -116,3 +116,150 @@ Screens read state with `useStore()` and call actions exported from `store.js`. 
 - **Mock data.** 200 generated guests. Swap in the real guest list as described in `docs/HANDOFF.md`.
 
 To clear everything: in the browser console run `localStorage.removeItem('launchpad_oxygene_v1')`, or use **Reset demo data**.
+# Nguvu Pad — Developer Handoff
+
+How the codebase works, the design tokens it uses, and how to change or extend it.
+For what each feature must do, see [STORIES.md](STORIES.md).
+
+---
+
+## 1. Architecture
+
+- **Vite + Preact + htm.** No JSX build step: the UI is an `html\`...\`` tagged template inside `App.render()`.
+- **One component, one state object.** `App` (in `src/App.js`) holds all state. `renderVals()` turns state into plain values and handlers; `render()` only reads `v.*`.
+- **Persistence.** `upd(patch)` = `setState(patch)` + save to `localStorage` key **`launchpad_oxygene_v1`**. Use `setState` for things that shouldn't survive a refresh (drafts, open dialogs, toasts).
+- **Inline styles** for component looks (they mirror the design canvas exactly). `src/styles.css` only holds animations, focus rings, hover states and the tribal band.
+
+```
+state ──renderVals()──▶ v (values + handlers) ──render()──▶ DOM
+  ▲                                                        │
+  └───────────── upd(patch) / setState(patch) ◀──── events ┘
+```
+
+### Where things live in `App.js`
+
+| Area | Look for |
+| --- | --- |
+| Default state and sample data | `defaults()` |
+| Mock guest list (200) | `guests()`, `baseChecked()` |
+| Save / load | `upd()`, `componentDidMount()` |
+| Check-in | `checkIn()`, `undo()`, `submitCode()` |
+| Live traffic simulation | `tick()` |
+| Chat | `sendMsg()` |
+| Suggestions feedback | `setReward()` |
+| Attendee ideas | `postIdea()`, `upvoteIdea()`, `toggleNoted()` |
+| Question builder | `readImage()`, `setB()`, `publishQuestion()` |
+| Accessibility | `speak()`, `vo()` (speaks only when voice-over is on), `announce()`, `announceIncoming()`, `dictate()`, `readPoll()`, `readResults()`, `readIdeaList()`, `componentDidUpdate()` (auto voice-over on screen change); settings in `a11y` |
+| Sign-in | `signInOrganizer()`, `joinAttendee()`, `signOut()` |
+| Everything the screen reads | `renderVals()` (sections marked `// ---- … ----`) |
+| Markup | `render()`; screens are marked by `isLogin`, `isCheckin`, `isPoll`, `isDash`, `isChat`, `isCop`, `isIdeas`, `builderOpen` |
+
+---
+
+## 2. Saved state (`launchpad_oxygene_v1`)
+
+| Key | Shape | Notes |
+| --- | --- | --- |
+| `role` | `null` \| `"organizer"` \| `"attendee"` | `null` shows the sign-in screen |
+| `email`, `guestName` | string | Used for the header initial and idea author |
+| `tab` | `checkin` \| `poll` \| `dash` \| `chat` \| `cop` \| `ideas` | Falls back to the role's first tab |
+| `checked` | `{ guestIndex: true }` | 124 pre-checked in the demo |
+| `votes`, `selected`, `voted` | built-in question `q1` | Counts per option `a`, `b`, `c` |
+| `customPolls` | `[{ id, question, mediaType, mediaSrc, answerStyle, options:[{id,label,img}], votes }]` | Videos are not saved (`mediaSrc: null`) |
+| `activePoll` | poll id | Which question attendees see |
+| `myVotes` | `{ pollId: optionId }` | One vote per custom question per device |
+| `messages` | `[{ id, who:"guest"\|"curator", mine, text, time }]` | |
+| `rewards` | `{ suggestionId: -1 \| 0 \| 1 }` | Helpful / Not helpful |
+| `a11y` | `{ voiceOver, readAloud, vibrate, transcripts }` | Accessibility settings (vibrate on by default) |
+| `ideas`, `myIdeaVotes` | `[{ id, text, author, votes, time, noted, mine }]`, `{ id: true }` | Attendee suggestions |
+
+---
+
+## 3. Design tokens
+
+| Token | Value | Use |
+| --- | --- | --- |
+| Navy | `#0F172A` | Header, tab bar, primary text |
+| Navy 2 | `#1E293B` | Cards on navy |
+| Slate | `#334155` | Non-leading bars, secondary text |
+| Muted | `#475569` | Sub-labels (passes 4.5:1 on white) |
+| Line | `#E2E8F0` / `#CBD5E1` | Borders, tracks / input borders |
+| Canvas | `#F8FAFC` | Page background |
+| Orange | `#F97316` | Buttons, selection, poll leader (**navy text on it**) |
+| Orange text | `#C2410C` | Orange used as text on white |
+| Orange soft | `#FFEDD5` | VIP badge, Live tag |
+| Green | `#10B981` | "Checked In" badge (text `#022C22`) |
+| Green dark | `#064E3B` | Success banner (white text) |
+| Error | `#B91C1C` text / `#7C2D12` banner | |
+
+- **Type:** Inter, falling back to system fonts. Sizes 11 / 12 / 13 / 14 / 15 / 16 / 18 / 20 / 22 / 30 / 56 px. Inputs are always 16 px or more (stops iOS zoom).
+- **Shape:** radius 10 / 12 / 14 / 18 px, pills 999 px.
+- **Touch:** every tappable thing is at least 44 px; most are 48 px.
+- **Motion:** 150–350 ms; everything is disabled under `prefers-reduced-motion`.
+
+---
+
+## 4. Accessibility rules (keep these when you change things)
+
+- Every icon-only button has an `aria-label`; toggles use `role="switch"` + `aria-checked`; the transcript button uses `aria-expanded`.
+- Chat is `role="log"` with `aria-live="polite"`; every incoming message is also announced through the hidden `srMsg` live region.
+- Images in questions need alt text (`alt`); videos **cannot be published without a transcript** (`publishQuestion()`).
+- Status never relies on colour alone: colour + icon + words.
+- Sounds are never the only signal: vibration + badge + on-screen text.
+- Access requests carry `access: true` on the message and are highlighted for organizers.
+
+## 5. Common changes
+
+**Use the real guest list.** Put the client file at `public/data/guests.json` and replace `guests()` with a loader (keep codes as text so leading zeros survive):
+
+```js
+async componentDidMount() {
+  const res = await fetch('/data/guests.json');
+  const raw = await res.json();
+  this._g = raw.map((g, i) => ({
+    id: i,
+    name: g.name || '-',
+    org: g.organization || '-',
+    tier: g.ticketType || '-',
+    code: g.checkInCode ? String(g.checkInCode).trim() : null,
+  }));
+  this.forceUpdate();
+  // …keep the existing localStorage load + setInterval below
+}
+```
+
+Also replace `baseChecked()` with `() => ({})` so nobody starts checked in.
+
+**Change the staff PIN.** Search `'2026'` in `signInOrganizer()`.
+
+**Add a tab.** Add it to `TABS` and to `allowedTabs` (per role) in `renderVals()`, add an `isX` flag, then add a `${v.isX && html\`…\`}` block in `render()`.
+
+**Change colours.** Search and replace the hex values in `App.js` (they're inline to match the design 1:1).
+
+---
+
+## 6. Next steps (backend)
+
+The Next.js + Supabase version (separate repo) already has the database schema, row-level security, realtime sync and an offline check-in queue. Moving to it fixes the one-browser limit:
+
+| Here (localStorage) | With Supabase |
+| --- | --- |
+| `checked` | `guests.checked_in_at` + `check_in_guest()` RPC |
+| `votes` / `customPolls` | `polls`, `poll_options`, `votes` (one vote per user enforced in SQL) |
+| `messages` | `messages` + realtime |
+| `ideas` | add an `ideas` table + `idea_votes` |
+| Videos / images | Supabase Storage bucket |
+| Demo PIN | Supabase Auth (magic link) + `staff` table |
+
+---
+
+## 7. QA checklist
+
+- [ ] Sign-in: attendee one tap; organizer rejects bad email / wrong PIN; `2026` works; tapping the initial signs out
+- [ ] Check-in: search, tap, code, already-in, invalid code, undo; count updates
+- [ ] Poll: vote once; create a question with an image + picture answers; Make live switches attendee view
+- [ ] Dashboard: numbers move after check-ins and votes; Simulate live traffic; Reset demo data
+- [ ] Chat: attendee messages right in navy, curator replies orange
+- [ ] Suggest: post (anonymous on/off), upvote/un-upvote, can't upvote own; organizer Mark noted shows a badge to attendees
+- [ ] Accessibility: VoiceOver/TalkBack reads tabs, buttons and new chat messages; Listen reads the poll; read-aloud and vibrate toggles work; a video question can't be published without a transcript; access requests are highlighted for organizers
+- [ ] No horizontal scroll at 360 px; refresh keeps everything; no console errors
