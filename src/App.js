@@ -18,7 +18,8 @@ const TABS = {
   dash: { label: 'Live', Screen: Dash },
   chat: { label: 'Chat', Screen: Chat },
   ideas: { label: 'Suggest', Screen: Ideas },
-  cop: { label: 'Suggestions', Screen: Suggestions },
+  // `short` replaces the label on the tab bar of small phones, where the full word would overlap its neighbours.
+  cop: { label: 'Suggestions', short: 'Suggest', Screen: Suggestions },
 };
 const ROLE_TABS = {
   organizer: ['checkin', 'poll', 'dash', 'chat', 'cop'],
@@ -33,15 +34,16 @@ export function App() {
   }, []);
 
   const tabs = ROLE_TABS[s.role];
-  if (!tabs) return html`<div class="app"><${Login} s=${s} /><${Toast} t=${s.toast} /></div>`;
+  if (!tabs) return html`<div class="app app-auth"><${Login} s=${s} /><${Toast} t=${s.toast} /></div>`;
 
   const tab = tabs.includes(s.tab) ? s.tab : tabs[0];
   const { Screen } = TABS[tab];
+  // data-tab / data-role let styles.css size each screen for wider viewports.
   return html`
-    <div class="app">
+    <div class="app app-shell" data-tab=${tab} data-role=${s.role}>
       <${Header} s=${s} tab=${tab} />
       <${Screen} s=${s} />
-      ${s.builder && html`<${Builder} b=${s.builder} />`}
+      ${s.builder && html`<div class="backdrop" aria-hidden="true"></div><${Builder} b=${s.builder} />`}
       <${Toast} t=${s.toast} />
       <${Tribal} class="tribal-nav" />
       <nav class="nav" aria-label="LaunchPad sections">
@@ -49,7 +51,9 @@ export function App() {
           <button class="tap" aria-current=${id === tab ? 'page' : undefined} onClick=${() => set({ tab: id })}>
             <span class="nav-bar"></span>
             <${Icon} name=${id} size=${22} />
-            <span class="nav-label">${TABS[id].label}</span>
+            ${TABS[id].short
+              ? html`<span class="nav-label"><span class="nav-full">${TABS[id].label}</span><span class="nav-short">${TABS[id].short}</span></span>`
+              : html`<span class="nav-label">${TABS[id].label}</span>`}
           </button>`)}
       </nav>
     </div>`;

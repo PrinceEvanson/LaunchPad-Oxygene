@@ -9,7 +9,7 @@ export function Poll({ s }) {
 
   return html`
     <div class="screen slide">
-      <div class="scroll poll-body">
+      <div class="scroll poll-body ${s.role === 'organizer' ? 'poll-org' : ''}">
         ${s.role === 'organizer' && html`
           <${QuestionList} s=${s} activeId=${active.id} />
           <span class="eyebrow preview-label">What attendees see</span>`}
