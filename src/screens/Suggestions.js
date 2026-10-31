@@ -13,6 +13,13 @@ const ITEMS = [
 ];
 const fmt = (v) => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(1);
 
+// Centering: the root overrides the CSS grid (page-split) with one centred flex column.
+const ROOT = 'display:flex;flex-direction:column;align-items:center;grid-template-columns:none;';
+const COL = 'flex:none;width:100%;max-width:720px;margin-left:auto;margin-right:auto;grid-column:1 / -1;';
+const HEAD = COL + 'display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;';
+const SEC = 'display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;';
+const CARD_TOP = 'display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;';
+
 export function Suggestions({ s }) {
   const poll = activePoll(s);
   const leader = leaderOf(poll);
@@ -28,34 +35,34 @@ export function Suggestions({ s }) {
   useEffect(() => vo('Top suggestion. ' + insight), []);
 
   return html`
-    <div class="screen scroll slide page page-split">
-      <div class="stack-4 page-head">
-        <div class="stack-2">
+    <div class="screen scroll slide page page-split" style=${ROOT}>
+      <div class="stack-4 page-head" style=${HEAD}>
+        <div class="stack-2" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
           <span class="eyebrow eyebrow-orange">Session suggestions</span>
           <h2 class="page-title">Suggestions for this session</h2>
         </div>
         <${VoToggle} on=${s.a11y.vo} onClick=${() => toggleVO('Top suggestion. ' + insight + ' ' + readRanked())} />
       </div>
 
-      <div class="page-col">
-        <div class="card insight">
-          <div class="qcard-top">
+      <div class="page-col" style=${COL}>
+        <div class="card insight" style="text-align:center;">
+          <div class="qcard-top" style=${CARD_TOP}>
             <span class="tag-dark"><${Icon} name="sparkle" size=${13} sw=${2.4} color="#F97316" />Top suggestion</span>
             <${Listen} onClick=${() => speak('Top suggestion. ' + insight)} label="Listen to the top suggestion" />
           </div>
-          <p class="insight-text">${insight}</p>
+          <p class="insight-text" style="text-align:center;">${insight}</p>
           <div class="hr"></div>
-          <span class="insight-q">Was this suggestion helpful?</span>
+          <span class="insight-q" style="display:block;text-align:center;">Was this suggestion helpful?</span>
           <div class="grid-2">
             <button class="tap rate rate-up" aria-pressed=${cur === 1} onClick=${() => setReward(currentId, 1)}><${Icon} name="thumbUp" />Helpful</button>
             <button class="tap rate rate-down" aria-pressed=${cur === -1} onClick=${() => setReward(currentId, -1)}><${Icon} name="thumbDown" />Not helpful</button>
           </div>
-          <span role="status" class="muted-13">${cur === 1
+          <span role="status" class="muted-13" style="display:block;text-align:center;">${cur === 1
             ? 'Marked helpful. The list below re-ranks instantly.'
             : cur === -1 ? 'Marked not helpful. The list below re-ranks instantly.' : 'Your feedback shapes the next suggestion.'}</span>
         </div>
 
-        <div class="sec-head">
+        <div class="sec-head" style=${SEC}>
           <span class="sec-title">All suggestions</span>
           <span class="sec-sub">Most helpful first</span>
         </div>
@@ -76,8 +83,8 @@ export function Suggestions({ s }) {
             </div>`)}
         </div>
 
-        <div class="sec-head mt-8">
-          <div class="stack-2">
+        <div class="sec-head mt-8" style=${SEC}>
+          <div class="stack-2" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
             <span class="sec-title">From attendees</span>
             <span class="sec-sub">${s.ideas.length} ideas · most upvoted first</span>
           </div>
