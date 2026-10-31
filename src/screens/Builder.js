@@ -58,6 +58,15 @@ export function Builder({ b }) {
               <span class="note">${video
                 ? 'Short clips work best (under 30 seconds). Videos play on this device for the demo.'
                 : 'Photos are resized automatically for fast loading on phones.'}</span>
+              ${video
+                ? html`
+                  <label for="b-transcript" class="flabel">Transcript <em>(required)</em></label>
+                  <textarea id="b-transcript" class="textarea" rows="3" placeholder="What is said and shown in the video"
+                    value=${b.transcript} onInput=${(e) => setB({ transcript: e.target.value })}></textarea>`
+                : html`
+                  <label for="b-alt" class="flabel">Image description <em>(for screen readers)</em></label>
+                  <input id="b-alt" class="field" type="text" maxlength="160" placeholder="e.g. The new product on stage under orange lights"
+                    value=${b.mediaAlt} onInput=${(e) => setB({ mediaAlt: e.target.value })} />`}
             </div>`}
         </div>
 

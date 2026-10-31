@@ -1,7 +1,8 @@
 // Organizer view: poll-driven top suggestion, re-rankable list, and attendee ideas.
 import { html } from 'htm/preact';
-import { activePoll, leaderOf, setReward, toggleNoted } from '../store.js';
-import { Icon } from '../ui.js';
+import { useEffect } from 'preact/hooks';
+import { activePoll, leaderOf, setReward, toggleNoted, speak, vo, toggleVO, readIdeaList } from '../store.js';
+import { Icon, Listen, SpeakBtn, VoToggle } from '../ui.js';
 
 const ITEMS = [
   { id: 'a', text: 'More focus on Short-form Vertical Video', base: 0 },
@@ -20,17 +21,28 @@ export function Suggestions({ s }) {
   const ranked = ITEMS.map((it) => ({ ...it, rw: s.rewards[it.id] || 0, score: it.base + (s.rewards[it.id] || 0) }))
     .sort((x, y) => y.score - x.score);
   const ideas = s.ideas.slice().sort((x, y) => y.votes - x.votes);
+  const insight = "Based on real-time polling trends, attendees want more focus on '" + (leader.short || leader.label) + "'.";
+  const readRanked = () => 'All suggestions, most helpful first. ' + ranked.map((r, i) => (i + 1) + ': ' + r.text + ', score ' + fmt(r.score) + '.').join(' ');
+
+  // Voice-over reads the top suggestion when this screen opens.
+  useEffect(() => vo('Top suggestion. ' + insight), []);
 
   return html`
     <div class="screen scroll slide page">
-      <div class="stack-4">
-        <span class="eyebrow eyebrow-orange">Session suggestions</span>
-        <h2 class="page-title">Suggestions for this session</h2>
+      <div class="page-head">
+        <div class="stack-4">
+          <span class="eyebrow eyebrow-orange">Session suggestions</span>
+          <h2 class="page-title">Suggestions for this session</h2>
+        </div>
+        <${VoToggle} on=${s.a11y.vo} onClick=${() => toggleVO('Top suggestion. ' + insight + ' ' + readRanked())} />
       </div>
 
       <div class="card insight">
-        <span class="tag-dark"><${Icon} name="sparkle" size=${13} sw=${2.4} color="#F97316" />Top suggestion</span>
-        <p class="insight-text">Based on real-time polling trends, attendees want more focus on '${leader.short || leader.label}'.</p>
+        <div class="qcard-top">
+          <span class="tag-dark"><${Icon} name="sparkle" size=${13} sw=${2.4} color="#F97316" />Top suggestion</span>
+          <${Listen} onClick=${() => speak('Top suggestion. ' + insight)} label="Listen to the top suggestion" />
+        </div>
+        <p class="insight-text">${insight}</p>
         <div class="hr"></div>
         <span class="insight-q">Was this suggestion helpful?</span>
         <div class="grid-2">
@@ -43,8 +55,11 @@ export function Suggestions({ s }) {
       </div>
 
       <div class="sec-head">
-        <span class="sec-title">All suggestions</span>
-        <span class="sec-sub">Most helpful first</span>
+        <div class="stack-2">
+          <span class="sec-title">All suggestions</span>
+          <span class="sec-sub">Most helpful first</span>
+        </div>
+        <${Listen} onClick=${() => speak(readRanked())} label="Listen to all suggestions" />
       </div>
       <div class="stack-10">
         ${ranked.map((r, i) => html`
@@ -64,8 +79,11 @@ export function Suggestions({ s }) {
       </div>
 
       <div class="sec-head mt-8">
-        <span class="sec-title">From attendees</span>
-        <span class="sec-sub">${s.ideas.length} ideas · most upvoted first</span>
+        <div class="stack-2">
+          <span class="sec-title">From attendees</span>
+          <span class="sec-sub">${s.ideas.length} ideas · most upvoted first</span>
+        </div>
+        <${Listen} onClick=${() => speak(readIdeaList(s.ideas))} label="Listen to attendee ideas" />
       </div>
       <div class="stack-10">
         ${ideas.map((it) => html`
@@ -76,7 +94,10 @@ export function Suggestions({ s }) {
             </span>
             <div class="item-text stack-3">
               <span class="item-title lh-135">${it.text}</span>
-              <span class="sec-sub">${it.author} · ${it.time}</span>
+              <span class="idea-line">
+                <span class="sec-sub">${it.author} · ${it.time}</span>
+                <${SpeakBtn} onClick=${() => speak(it.text + '. ' + it.votes + ' upvotes.')} label=${'Read aloud: ' + it.text} />
+              </span>
             </div>
             <button class="tap noted-btn" onClick=${() => toggleNoted(it.id)} aria-pressed=${!!it.noted}
               aria-label=${(it.noted ? 'Unmark: ' : 'Mark noted: ') + it.text}>${it.noted ? 'Noted' : 'Mark noted'}</button>

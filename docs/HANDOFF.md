@@ -1,4 +1,4 @@
-# LaunchPad — Developer Handoff
+# Nguvu Pad — Developer Handoff
 
 How the codebase works, the design tokens it uses, and how to change or extend it.
 For what each feature must do, see [STORIES.md](STORIES.md).
@@ -34,6 +34,8 @@ store.js state ──useStore()──▶ screens/*.js ──render──▶ DOM
 | Attendee ideas | `postIdea()`, `upvoteIdea()`, `toggleNoted()`; UI in `screens/Ideas.js` |
 | Sign-in | `signInOrganizer()`, `joinAttendee()`, `signOut()`; UI in `screens/Login.js` |
 | Header, tab bar, toast | `App.js` (`TABS`, `ROLE_TABS`) |
+| Accessibility | `speak()`, `vo()`, `announce()`, `dictate()`, `setA11y()`, `toggleVO()`, `ACCESS`; panel in `screens/A11yPanel.js` |
+| Text read aloud | `readPoll()`, `readResults()`, `readIdeaList()` |
 
 ---
 
@@ -46,12 +48,13 @@ store.js state ──useStore()──▶ screens/*.js ──render──▶ DOM
 | `tab` | `checkin` \| `poll` \| `dash` \| `chat` \| `cop` \| `ideas` | Falls back to the role's first tab |
 | `checked` | `{ guestIndex: true }` | 124 pre-checked in the demo |
 | `votes`, `selected`, `voted` | built-in question `q1` | Counts per option `a`, `b`, `c` |
-| `customPolls` | `[{ id, question, mediaType, mediaSrc, answerStyle, options:[{id,label,img}], votes }]` | Videos are not saved (`mediaSrc: null`) |
+| `customPolls` | `[{ id, question, mediaType, mediaSrc, answerStyle, options:[{id,label,img}], votes }]` | Also `mediaAlt`, `transcript`. Videos are not saved (`mediaSrc: null`); transcripts are |
 | `activePoll` | poll id | Which question attendees see |
 | `myVotes` | `{ pollId: optionId }` | One vote per custom question per device |
-| `messages` | `[{ id, who:"guest"\|"curator", mine, text, time }]` | |
+| `messages` | `[{ id, who:"guest"\|"curator", mine, text, time, access }]` | `access` = support label on access requests |
 | `rewards` | `{ suggestionId: -1 \| 0 \| 1 }` | Helpful / Not helpful |
 | `ideas`, `myIdeaVotes` | `[{ id, text, author, votes, time, noted, mine }]`, `{ id: true }` | Attendee suggestions |
+| `a11y` | `{ readAloud, vibrate, transcripts, vo }` | Accessibility switches (`vibrate` on by default) |
 
 ---
 

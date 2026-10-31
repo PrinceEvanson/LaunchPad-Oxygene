@@ -1,8 +1,8 @@
 {
-  "name": "launchpad-oxygene",
+  "name": "nguvu-pad",
   "version": "1.0.0",
   "private": true,
-  "description": "LaunchPad — phone-first event app for Oxygène MCL: usher check-in, live polls, chat, suggestions and organizer dashboard.",
+  "description": "Nguvu Pad — phone-first event app for Oxygène MCL: usher check-in, live polls, chat, suggestions and organizer dashboard.",
   "type": "module",
   "scripts": {
     "dev": "vite --host",

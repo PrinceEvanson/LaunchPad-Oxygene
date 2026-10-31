@@ -1,5 +1,6 @@
 import { html } from 'htm/preact';
-import { GUESTS, set, activePoll, totalVotes, leaderOf, resetDemo } from '../store.js';
+import { GUESTS, set, activePoll, totalVotes, leaderOf, resetDemo, readResults, speak } from '../store.js';
+import { Listen, Switch } from '../ui.js';
 
 export function Dash({ s }) {
   const total = GUESTS.length;
@@ -34,9 +35,12 @@ export function Dash({ s }) {
       </div>
 
       <div class="card breakdown">
-        <div class="stack-4">
-          <span class="card-title">Live poll breakdown</span>
-          <span class="card-sub">${poll.question}</span>
+        <div class="card-head">
+          <div class="stack-4">
+            <span class="card-title">Live poll breakdown</span>
+            <span class="card-sub">${poll.question}</span>
+          </div>
+          <${Listen} onClick=${() => speak(readResults(poll))} label="Listen to the live results" />
         </div>
         ${poll.options.map((o) => {
           const pct = votes ? Math.round(((poll.votes[o.id] || 0) / votes) * 100) : 0;
@@ -57,9 +61,7 @@ export function Dash({ s }) {
           <span class="sim-title">Simulate live traffic</span>
           <span class="sim-sub">Adds check-ins and votes every few seconds</span>
         </div>
-        <button class="tap switch" role="switch" aria-checked=${!!s.sim} aria-label="Simulate live traffic" onClick=${() => set({ sim: !s.sim })}>
-          <span class="switch-track"><span class="switch-knob"></span></span>
-        </button>
+        <${Switch} on=${s.sim} label="Simulate live traffic" onClick=${() => set({ sim: !s.sim })} />
       </div>
 
       <button class="tap btn-out reset" onClick=${resetDemo}>Reset demo data</button>

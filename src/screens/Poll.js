@@ -1,11 +1,16 @@
 import { html } from 'htm/preact';
-import { allPolls, activePoll, myChoice, pickAnswer, submitVote, makeLive, openBuilder } from '../store.js';
-import { Icon } from '../ui.js';
+import { useEffect } from 'preact/hooks';
+import { set, allPolls, activePoll, myChoice, pickAnswer, submitVote, makeLive, openBuilder, readPoll, speak, vo } from '../store.js';
+import { Icon, Listen } from '../ui.js';
 
 export function Poll({ s }) {
   const active = activePoll(s);
   const { sel, voted } = myChoice(s, active);
   const pictures = active.answerStyle === 'image';
+  const showTranscript = s.transcriptOpen || s.a11y.transcripts;
+
+  // Voice-over reads the question when Poll opens or a new question goes live.
+  useEffect(() => vo(readPoll(active)), [active.id]);
 
   return html`
     <div class="screen slide">
@@ -15,11 +20,21 @@ export function Poll({ s }) {
           <span class="eyebrow preview-label">What attendees see</span>`}
 
         <div class="card qcard">
-          <span class="chip-live"><span class="dot live-dot"></span>Live poll</span>
-          ${active.mediaType === 'image' && active.mediaSrc && html`<img class="qmedia" src=${active.mediaSrc} alt="Question image" />`}
-          ${active.mediaType === 'video' && (active.mediaSrc
-            ? html`<video class="qmedia-video" src=${active.mediaSrc} controls playsinline preload="metadata" aria-label="Question video"></video>`
-            : html`<div class="qmedia-missing">Video plays on the device that added it</div>`)}
+          <div class="qcard-top">
+            <span class="chip-live"><span class="dot live-dot"></span>Live poll</span>
+            <${Listen} onClick=${() => speak(readPoll(active))} label="Listen to the question and answers" />
+          </div>
+          ${active.mediaType === 'image' && active.mediaSrc && html`<img class="qmedia" src=${active.mediaSrc} alt=${active.mediaAlt || 'Question image'} />`}
+          ${active.mediaType === 'video' && html`
+            ${active.mediaSrc
+              ? html`<video class="qmedia-video" src=${active.mediaSrc} controls playsinline preload="metadata" aria-label="Question video"></video>`
+              : html`<div class="qmedia-missing">Video plays on the device that added it</div>`}
+            ${active.transcript && html`
+              ${!s.a11y.transcripts && html`
+                <button class="tap btn-ghost" aria-expanded=${showTranscript} onClick=${() => set({ transcriptOpen: !s.transcriptOpen })}>
+                  ${showTranscript ? 'Hide transcript' : 'Show transcript'}
+                </button>`}
+              ${showTranscript && html`<p class="transcript"><b>Transcript:</b> ${active.transcript}</p>`}`}`}
           <h2 id="poll-q">${active.question}</h2>
         </div>
 

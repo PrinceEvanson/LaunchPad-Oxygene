@@ -1,8 +1,8 @@
-// LaunchPad — Oxygène MCL. App shell: header, current screen, toast, tab bar.
+// Nguvu Pad. App shell: header, current screen, toast, tab bar, screen-reader live region.
 import { html } from 'htm/preact';
 import { useEffect } from 'preact/hooks';
 import { useStore, set, tick, signOut, undo } from './store.js';
-import { Icon, Logo, Badge, Tribal } from './ui.js';
+import { Icon, Logo, Tribal } from './ui.js';
 import { Login } from './screens/Login.js';
 import { Checkin } from './screens/Checkin.js';
 import { Poll } from './screens/Poll.js';
@@ -11,6 +11,7 @@ import { Dash } from './screens/Dash.js';
 import { Chat } from './screens/Chat.js';
 import { Suggestions } from './screens/Suggestions.js';
 import { Ideas } from './screens/Ideas.js';
+import { A11yPanel } from './screens/A11yPanel.js';
 
 const TABS = {
   checkin: { label: 'Check-in', Screen: Checkin },
@@ -33,7 +34,8 @@ export function App() {
   }, []);
 
   const tabs = ROLE_TABS[s.role];
-  if (!tabs) return html`<div class="app"><${Login} s=${s} /><${Toast} t=${s.toast} /></div>`;
+  const live = html`<div class="sr" role="status" aria-live="polite">${s.announcement}</div>`;
+  if (!tabs) return html`<div class="app"><${Login} s=${s} /><${Toast} t=${s.toast} />${live}</div>`;
 
   const tab = tabs.includes(s.tab) ? s.tab : tabs[0];
   const { Screen } = TABS[tab];
@@ -42,16 +44,19 @@ export function App() {
       <${Header} s=${s} tab=${tab} />
       <${Screen} s=${s} />
       ${s.builder && html`<${Builder} b=${s.builder} />`}
+      ${s.a11yOpen && html`<${A11yPanel} s=${s} />`}
       <${Toast} t=${s.toast} />
       <${Tribal} class="tribal-nav" />
-      <nav class="nav" aria-label="LaunchPad sections">
+      <nav class="nav" aria-label="Nguvu Pad sections">
         ${tabs.map((id) => html`
-          <button class="tap" aria-current=${id === tab ? 'page' : undefined} onClick=${() => set({ tab: id })}>
+          <button class="tap" aria-current=${id === tab ? 'page' : undefined} onClick=${() => set(id === 'chat' ? { tab: id, unread: 0 } : { tab: id })}>
             <span class="nav-bar"></span>
             <${Icon} name=${id} size=${22} />
             <span class="nav-label">${TABS[id].label}</span>
+            ${id === 'chat' && s.unread > 0 && tab !== 'chat' && html`<span class="nav-badge">${s.unread}<span class="sr"> unread</span></span>`}
           </button>`)}
       </nav>
+      ${live}
     </div>`;
 }
 
@@ -61,15 +66,16 @@ function Header({ s, tab }) {
   return html`
     <header class="top">
       <div class="top-row">
-        <div class="brand">
-          <${Logo} />
-          <span class="divider"></span>
-          <${Badge} />
+        <${Logo} />
+        <div class="top-actions">
+          <button class="tap icon-btn a11y-btn" onClick=${() => set({ a11yOpen: true })} aria-label="Accessibility settings">
+            <${Icon} name="access" size=${22} />
+          </button>
+          <button class="tap avatar-btn" onClick=${signOut} aria-label=${'Sign out (' + (org ? 'organizer' : 'attendee') + ')'}>
+            <span class="dot dot-lg live-dot"></span>
+            <span class="avatar">${initial}</span>
+          </button>
         </div>
-        <button class="tap avatar-btn" onClick=${signOut} aria-label=${'Sign out (' + (org ? 'organizer' : 'attendee') + ')'}>
-          <span class="dot dot-lg live-dot"></span>
-          <span class="avatar">${initial}</span>
-        </button>
       </div>
 
       ${tab === 'checkin' && html`

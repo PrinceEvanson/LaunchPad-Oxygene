@@ -7,8 +7,8 @@ export function Login({ s }) {
     <div class="screen scroll slide login">
       <div class="login-hero">
         <div class="brand brand-lg">
-          <${Logo} width=${176} height=${33} />
-          <${Badge} />
+          <${Logo} large />
+          <${Badge} text="Event app" />
         </div>
         <h1>Welcome to the launch</h1>
         <p>Two Rivers Business Park · South Tower, 5th floor</p>
@@ -70,7 +70,7 @@ function OrganizerForm({ s }) {
       <h2>Organizer sign-in</h2>
       <p class="lead">For ushers and event staff.</p>
       <label for="org-email" class="label">Work email</label>
-      <input id="org-email" class="field" type="email" autocomplete="email" inputmode="email" placeholder="you@oxygenemcl.com"
+      <input id="org-email" class="field" type="email" autocomplete="email" inputmode="email" placeholder="you@company.com"
         value=${s.email} onInput=${(e) => set({ email: e.target.value, loginError: '' })} />
       <label for="org-pin" class="label mt-4">Staff PIN</label>
       <input id="org-pin" class="field field-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="4 digits"

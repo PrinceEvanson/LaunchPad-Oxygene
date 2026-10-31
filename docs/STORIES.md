@@ -1,4 +1,4 @@
-# LaunchPad — User Stories & Build Spec
+# Nguvu Pad — User Stories & Build Spec
 
 31 Oct 2026 · Lead (PM): Mat · Team: Designer, Frontend Dev · Hand-in by 13:50
 
@@ -214,7 +214,7 @@ The organizer view only reads what the usher and vote screens write, so it is qu
 
 **Acceptance criteria**
 
-1. An Export CSV button downloads `launchpad-results.csv` with the columns `question, option, votes, percent`.
+1. An Export CSV button downloads `nguvu-pad-results.csv` with the columns `question, option, votes, percent`.
 2. It opens correctly in Excel and Google Sheets (commas inside text are quoted).
 
 **Cut rule:** start only if all musts pass at 13:20. First to go.

@@ -17,6 +17,9 @@ const ICONS = {
   pin: () => html`<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" />`,
   send: () => html`<path d="M22 2 11 13" /><path d="M22 2 15 22l-4-9-9-4 20-7Z" />`,
   sparkle: () => html`<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />`,
+  volume: () => html`<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" /><path d="M16 9a5 5 0 0 1 0 6" /><path d="M19.364 18.364a9 9 0 0 0 0-12.728" />`,
+  mic: () => html`<path d="M12 19v3" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><rect x="9" y="2" width="6" height="13" rx="3" />`,
+  access: () => html`<circle cx="16" cy="4" r="1" /><path d="m18 19 1-7-6 1" /><path d="m5 8 3-3 5.5 3-2.36 3.5" /><path d="M4.24 14.5a5 5 0 0 0 6.88 6" /><path d="M13.76 17.5a5 5 0 0 0-6.88-6" />`,
   thumbUp: thumb,
   thumbDown: thumb,
   // Tab bar
@@ -32,12 +35,33 @@ export const Icon = ({ name, size = 20, sw = 2, color = 'currentColor' }) => htm
   <svg aria-hidden="true" width=${size} height=${size} viewBox="0 0 24 24" fill="none" stroke=${color} stroke-width=${sw}
     stroke-linecap="round" stroke-linejoin="round" style=${name === 'thumbDown' ? 'transform: rotate(180deg)' : undefined}>${ICONS[name]()}</svg>`;
 
-export const Logo = ({ width = 138, height = 26 }) => html`
-  <svg role="img" aria-label="Oxygène MCL" width=${width} height=${height} viewBox="0 0 138 26">
-    <text x="0" y="20" font-family="Inter, system-ui, sans-serif" font-size="22" letter-spacing="-0.4"><tspan fill="#FFFFFF" font-weight="500">oxygène</tspan><tspan dx="6" fill="#F97316" font-weight="800" letter-spacing="0.8">MCL</tspan></text>
-  </svg>`;
+// "nguvu PAD" wordmark with the "by oxygène MCL" line under it. large = sign-in screen.
+export const Logo = ({ large }) => html`
+  <div class="logo ${large ? 'logo-lg' : ''}">
+    <svg role="img" aria-label="Nguvu Pad" width=${large ? 153 : 120} height=${large ? 33 : 26} viewBox="0 0 120 26" overflow="visible">
+      <text x="0" y="20" font-family="Inter, system-ui, sans-serif" font-size="22" letter-spacing="-0.4"><tspan fill="#FFFFFF" font-weight="500">nguvu</tspan><tspan dx="6" fill="#F97316" font-weight="800" letter-spacing="0.8">PAD</tspan></text>
+    </svg>
+    <span class="logo-by">by oxygène <b>MCL</b></span>
+  </div>`;
 
-export const Badge = () => html`<span class="lp-badge">LaunchPad</span>`;
+export const Badge = ({ text }) => html`<span class="lp-badge">${text}</span>`;
+
+// Pill "Listen" button that reads text aloud.
+export const Listen = ({ onClick, label }) => html`
+  <button class="tap listen" onClick=${onClick} aria-label=${label}><${Icon} name="volume" size=${16} sw=${2.2} />Listen</button>`;
+
+// Small speaker icon button (chat messages, idea rows).
+export const SpeakBtn = ({ onClick, label }) => html`
+  <button class="tap speak-btn" onClick=${onClick} aria-label=${label}><${Icon} name="volume" size=${16} sw=${2.2} /></button>`;
+
+// Voice-over on/off pill used on the Suggest and Suggestions screens.
+export const VoToggle = ({ on, onClick }) => html`
+  <button class="tap listen vo-toggle" aria-pressed=${!!on} onClick=${onClick}><${Icon} name="volume" size=${16} sw=${2.2} />Voice-over ${on ? 'on' : 'off'}</button>`;
+
+export const Switch = ({ on, label, onClick }) => html`
+  <button class="tap switch" role="switch" aria-checked=${!!on} aria-label=${label} onClick=${onClick}>
+    <span class="switch-track"><span class="switch-knob"></span></span>
+  </button>`;
 
 export const Tribal = ({ class: cls = '' }) => html`<div class="tribal ${cls}" aria-hidden="true"></div>`;
 

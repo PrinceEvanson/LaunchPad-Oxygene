@@ -1,6 +1,6 @@
-# LaunchPad — UI/UX Pitch Notes
+# Nguvu Pad — UI/UX Pitch Notes
 
-About 6 minutes of slides, then a 2-minute live demo. The slide deck is "LaunchPad — UI/UX Design Pitch".
+About 6 minutes of slides, then a 2-minute live demo. The slide deck is "Nguvu Pad — UI/UX Design Pitch".
 
 | # | Slide | Time | Line to land |
 | --- | --- | --- | --- |

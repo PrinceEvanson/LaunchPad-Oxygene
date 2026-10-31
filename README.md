@@ -1,4 +1,4 @@
-# LaunchPad — Oxygène MCL
+# Nguvu Pad — event app by Oxygène MCL
 
 Phone-first event app for the Oxygène MCL product launch at Two Rivers Business Park, Nairobi.
 One app, two roles:
@@ -35,8 +35,8 @@ Deploy `dist/` to any static host (Vercel, Netlify, GitHub Pages).
 ### Run with Docker (no Node needed)
 
 ```bash
-docker build -t launchpad .
-docker run --rm -p 8080:80 launchpad
+docker build -t nguvu-pad .
+docker run --rm -p 8080:80 nguvu-pad
 ```
 
 Open http://localhost:8080.
@@ -46,7 +46,7 @@ Open http://localhost:8080.
 ## Project structure
 
 ```
-launchpad-app/
+nguvu-pad/
 ├── index.html            Page shell, viewport meta, Inter font
 ├── package.json          Scripts and dependencies (Preact, htm, Vite)
 ├── vite.config.js
@@ -86,6 +86,12 @@ Screens read state with `useStore()` and call actions exported from `store.js`. 
 **Suggestions**
 - Attendees post ideas (optionally anonymous) and upvote others'.
 - Organizers see those ideas ranked by votes and mark them **Noted**. They also get a "Top suggestion" driven by poll results, with Helpful / Not helpful feedback that re-ranks the list.
+
+**Accessibility (♿ in the header)**: read new messages aloud, vibrate on new messages (on by default), show video transcripts automatically, and voice-over for polls and suggestions.
+- Chat: a speaker on every message, screen-reader announcements, voice typing (mic), an unread badge on the Chat tab, and **Need support?** chips for attendees (live captions, KSL interpreter, front seat, describe the slides). Organizers see these as **Access request** messages with matching quick replies.
+- Polls: **Listen** on every question, image descriptions for screen readers, and videos can't be published without a transcript.
+- Suggest / Suggestions: a **Voice-over on/off** switch, **Speak your idea** (mic), and **Listen** buttons on lists and ideas.
+- Voice typing needs Chrome or Edge with microphone permission.
 
 **Design**: navy `#0F172A` + Oxygène orange `#F97316`, tribal print bands, 48 px touch targets, 4.5:1 contrast, reduced-motion support.
 

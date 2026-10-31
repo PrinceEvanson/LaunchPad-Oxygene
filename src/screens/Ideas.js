@@ -1,14 +1,22 @@
 // Attendee view: post a suggestion and upvote others'.
 import { html } from 'htm/preact';
-import { set, postIdea, upvoteIdea } from '../store.js';
-import { Icon } from '../ui.js';
+import { useEffect } from 'preact/hooks';
+import { set, postIdea, upvoteIdea, speak, vo, toggleVO, dictate, readIdeaList } from '../store.js';
+import { Icon, Listen, SpeakBtn, VoToggle } from '../ui.js';
 
 export function Ideas({ s }) {
   const ideas = s.ideas.slice().sort((x, y) => y.votes - x.votes);
+  const listening = s.listening === 'idea';
+
+  // Voice-over reads the top 5 ideas when this screen opens.
+  useEffect(() => vo(readIdeaList(s.ideas)), []);
   return html`
     <div class="screen scroll slide page">
       <div class="stack-4">
-        <span class="eyebrow eyebrow-orange">Your ideas</span>
+        <div class="page-head">
+          <span class="eyebrow eyebrow-orange">Your ideas</span>
+          <${VoToggle} on=${s.a11y.vo} onClick=${() => toggleVO('Suggest something for this session. ' + readIdeaList(s.ideas))} />
+        </div>
         <h2 class="page-title">Suggest something for this session</h2>
         <p class="lead">The organizers see every idea live. Upvote the ones you agree with.</p>
       </div>
@@ -17,6 +25,9 @@ export function Ideas({ s }) {
         <label for="idea-text" class="flabel">Your suggestion</label>
         <textarea id="idea-text" class="textarea textarea-soft" rows="3" maxlength="200" placeholder="e.g. Share the slides on WhatsApp after the talk"
           value=${s.ideaDraft} onInput=${(e) => set({ ideaDraft: e.target.value.slice(0, 200) })}></textarea>
+        <button class="tap btn-ghost ${listening ? 'mic-on' : ''}" aria-pressed=${listening} onClick=${() => dictate('idea')}>
+          <${Icon} name="mic" size=${18} sw=${2.2} />${listening ? 'Listening… tap to stop' : 'Speak your idea'}
+        </button>
         <div class="compose-row">
           <label class="check">
             <input type="checkbox" checked=${s.ideaAnon} onChange=${() => set({ ideaAnon: !s.ideaAnon })} />
@@ -28,8 +39,11 @@ export function Ideas({ s }) {
       </div>
 
       <div class="sec-head">
-        <span class="sec-title">Ideas from the room</span>
-        <span class="sec-sub">Most upvoted first</span>
+        <div class="stack-2">
+          <span class="sec-title">Ideas from the room</span>
+          <span class="sec-sub">Most upvoted first</span>
+        </div>
+        <${Listen} onClick=${() => speak(readIdeaList(s.ideas))} label="Listen to the top ideas" />
       </div>
       <div class="stack-10">
         ${ideas.map((it) => {
@@ -40,6 +54,7 @@ export function Ideas({ s }) {
                 <span class="idea-text">${it.text}</span>
                 <div class="idea-meta">
                   <span class="sec-sub">${it.mine ? 'You' : it.author} · ${it.time}</span>
+                  <${SpeakBtn} onClick=${() => speak(it.text + '. ' + it.votes + ' upvotes.')} label=${'Read aloud: ' + it.text} />
                   ${it.noted && html`<span class="noted-badge"><${Icon} name="check" size=${12} sw=${3} />Noted by organizers</span>`}
                 </div>
               </div>

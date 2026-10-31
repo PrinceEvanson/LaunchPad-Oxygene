@@ -1,8 +1,8 @@
-// LaunchPad state: one object, saved to localStorage, plus every action the UI calls.
+// Nguvu Pad state: one object, saved to localStorage, plus every action the UI calls.
 import { useEffect, useReducer } from 'preact/hooks';
 
 const KEY = 'launchpad_oxygene_v1';
-const SAVED = ['tab', 'checked', 'selected', 'voted', 'votes', 'messages', 'rewards', 'role', 'guestName', 'email', 'activePoll', 'myVotes', 'ideas', 'myIdeaVotes', 'customPolls'];
+const SAVED = ['tab', 'checked', 'selected', 'voted', 'votes', 'messages', 'rewards', 'role', 'guestName', 'email', 'activePoll', 'myVotes', 'ideas', 'myIdeaVotes', 'customPolls', 'a11y'];
 
 // ---- Mock data (seeded, so every device gets the same 200 guests) ----
 function rng(seed) {
@@ -63,6 +63,8 @@ function defaults() {
     ],
     myIdeaVotes: {}, ideaDraft: '', ideaAnon: false,
     customPolls: [], activePoll: 'q1', myVotes: {}, customSel: {}, builder: null,
+    a11y: { readAloud: false, vibrate: true, transcripts: false, vo: false }, a11yOpen: false,
+    unread: 0, listening: null, announcement: '', transcriptOpen: false,
     role: null, loginMode: 'choose', email: '', pin: '', guestName: '', loginError: '', loginTries: 0,
   };
 }
@@ -171,18 +173,18 @@ export function myChoice(s, p) {
 }
 
 export function pickAnswer(p, id) {
-  if (p.id === 'q1') {
-    if (!state.voted) set({ selected: id });
-    return;
-  }
-  if (state.myVotes[p.id] != null) return;
-  set({ customSel: { ...state.customSel, [p.id]: id } });
+  const locked = p.id === 'q1' ? state.voted : state.myVotes[p.id] != null;
+  if (locked) return;
+  set(p.id === 'q1' ? { selected: id } : { customSel: { ...state.customSel, [p.id]: id } });
+  const i = p.options.findIndex((o) => o.id === id);
+  vo('Selected ' + 'ABCD'[i] + ', ' + p.options[i].label);
 }
 
 export function submitVote(p) {
   if (p.id === 'q1') {
     if (state.voted || !state.selected) return;
-    return set({ voted: true, votes: { ...state.votes, [state.selected]: state.votes[state.selected] + 1 } });
+    set({ voted: true, votes: { ...state.votes, [state.selected]: state.votes[state.selected] + 1 } });
+    return vo('Vote submitted');
   }
   const pick = state.customSel[p.id];
   if (!pick) return flash('Pick an answer first', 'err');
@@ -191,6 +193,21 @@ export function submitVote(p) {
     myVotes: { ...state.myVotes, [p.id]: pick },
     customPolls: state.customPolls.map((x) => (x.id === p.id ? { ...x, votes: { ...x.votes, [pick]: (x.votes[pick] || 0) + 1 } } : x)),
   });
+  vo('Vote submitted');
+}
+
+// Text read by Listen buttons and voice-over.
+export function readPoll(p) {
+  const media = p.mediaType === 'image' && p.mediaAlt ? ' Image: ' + p.mediaAlt + '.' : '';
+  return 'Question: ' + p.question + '.' + media + ' ' + p.options.map((o, i) => 'ABCD'[i] + ': ' + o.label + '.').join(' ');
+}
+
+export function readResults(p) {
+  const n = totalVotes(p);
+  if (!n) return 'Live results for: ' + p.question + '. No votes yet.';
+  const lead = leaderOf(p);
+  return 'Live results for: ' + p.question + '. ' + n + ' votes. ' + p.options.map((o) =>
+    o.label + ': ' + Math.round(((p.votes[o.id] || 0) / n) * 100) + ' percent' + (o === lead ? ', leading' : '') + '.').join(' ');
 }
 
 export function makeLive(id) {
@@ -199,7 +216,7 @@ export function makeLive(id) {
 }
 
 // ---- Question builder ----
-export const openBuilder = () => set({ builder: { question: '', mediaType: 'none', mediaSrc: null, answerStyle: 'text', options: [{ label: '', img: null }, { label: '', img: null }], error: '' } });
+export const openBuilder = () => set({ builder: { question: '', mediaType: 'none', mediaSrc: null, mediaAlt: '', transcript: '', answerStyle: 'text', options: [{ label: '', img: null }, { label: '', img: null }], error: '' } });
 export const closeBuilder = () => set({ builder: null });
 
 export function setB(patch) {
@@ -239,6 +256,7 @@ export function publishQuestion() {
   const q = b.question.trim();
   if (!q) return fail('Write the question first.');
   if (b.mediaType !== 'none' && !b.mediaSrc) return fail('Choose a ' + b.mediaType + ', or set media to None.');
+  if (b.mediaType === 'video' && !b.transcript.trim()) return fail('Add a transcript so deaf guests can follow the video.');
   if (b.options.length < 2) return fail('Add at least 2 answers.');
   for (let i = 0; i < b.options.length; i++) {
     const o = b.options[i];
@@ -248,7 +266,8 @@ export function publishQuestion() {
   const id = 'p' + Date.now();
   const options = b.options.map((o, i) => ({ id: 'o' + i, label: o.label.trim() || 'Answer ' + 'ABCD'[i], img: b.answerStyle === 'image' ? o.img : null }));
   const votes = Object.fromEntries(options.map((o) => [o.id, 0]));
-  const poll = { id, question: q, mediaType: b.mediaType, mediaSrc: b.mediaType === 'none' ? null : b.mediaSrc, answerStyle: b.answerStyle, options, votes };
+  const poll = { id, question: q, mediaType: b.mediaType, mediaSrc: b.mediaType === 'none' ? null : b.mediaSrc, answerStyle: b.answerStyle, options, votes,
+    mediaAlt: b.mediaType === 'image' ? b.mediaAlt.trim() : '', transcript: b.mediaType === 'video' ? b.transcript.trim() : '' };
   set({ customPolls: [...state.customPolls, poll], activePoll: id, builder: null });
   flash('Question is live on attendee phones', 'ok');
 }
@@ -294,22 +313,101 @@ export function resetDemo() {
 const GUEST_REPLIES = ['Thank you, that helps!', 'Which room is the next session in?', 'Will the slides be shared after the session?', 'Great, heading there now.', 'Is there a networking break after this talk?'];
 const CURATOR_REPLIES = ['Thanks for your message! A curator will be right with you.', 'Refreshments are available at the main lobby area.', 'Yes, the slides will be shared after the session.', 'The next session starts shortly in the South Tower conference room.'];
 
-export function sendMsg(text = state.draft) {
+// Attendee "Need support?" chips and the organizer's matching quick replies.
+export const ACCESS = [
+  { label: 'Live captions', request: 'I need live captions, please.', reply: 'Live captions are on the main screen and in this chat.' },
+  { label: 'KSL interpreter', request: 'I need a Kenyan Sign Language (KSL) interpreter.', reply: 'A KSL interpreter will meet you at the front of the room.' },
+  { label: 'Front seat', request: 'I need a seat near the front.', reply: "We've reserved a front-row seat for you. An usher will guide you." },
+  { label: 'Describe the slides', request: 'Please describe the slides for me.', reply: 'Slide descriptions will be shared in this chat as each slide comes up.' },
+];
+
+export function sendMsg(text = state.draft, access = null) {
   const t = String(text).trim();
   if (!t) return;
   const org = state.role === 'organizer';
-  set({ messages: [...state.messages, { id: Date.now(), who: org ? 'curator' : 'guest', mine: true, text: t, time: now() }], draft: '', typing: true });
+  set({ messages: [...state.messages, { id: Date.now(), who: org ? 'curator' : 'guest', mine: true, text: t, time: now(), access }], draft: '', typing: true });
   clearTimeout(replyTimer);
   replyTimer = setTimeout(() => {
     const pool = org ? GUEST_REPLIES : CURATOR_REPLIES;
-    const reply = { id: Date.now() + 1, who: org ? 'guest' : 'curator', mine: false, text: pool[state.messages.length % pool.length], time: now() };
-    set({ messages: [...state.messages, reply], typing: false });
+    const match = access && ACCESS.find((x) => x.label === access);
+    const reply = match ? match.reply : pool[state.messages.length % pool.length];
+    receive({ id: Date.now() + 1, who: org ? 'guest' : 'curator', mine: false, text: reply, time: now() });
   }, 1700);
+}
+
+export const sendAccess = (x) => sendMsg(x.request, x.label);
+
+// A message from someone else: screen reader, read-aloud, vibration, unread badge.
+function receive(msg) {
+  const inChat = state.tab === 'chat';
+  set({ messages: [...state.messages, msg], typing: false, unread: inChat ? 0 : state.unread + 1 });
+  const line = (msg.who === 'curator' ? 'Curator' : 'Attendee') + ' says: ' + msg.text;
+  if (!inChat) announce(line); // in Chat, the role="log" list announces it
+  if (state.a11y.readAloud) speak(line);
+  if (state.a11y.vibrate && navigator.vibrate) navigator.vibrate(120);
+}
+
+// ---- Accessibility ----
+const canSpeak = () => 'speechSynthesis' in window;
+
+export function speak(text) {
+  if (!canSpeak()) return flash('Read-aloud is not supported in this browser', 'err');
+  speechSynthesis.cancel();
+  speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+}
+
+// Voice-over: speaks only when the setting is on.
+export function vo(text) {
+  if (state.a11y.vo && canSpeak()) speak(text);
+}
+
+// Screen-reader announcement through the live region in App.js.
+export function announce(text) {
+  set({ announcement: '' });
+  setTimeout(() => set({ announcement: text }), 50);
+}
+
+export function setA11y(key) {
+  const on = !state.a11y[key];
+  set({ a11y: { ...state.a11y, [key]: on } });
+  if (key === 'vo' && !on && canSpeak()) speechSynthesis.cancel();
+  return on;
+}
+
+// Voice-over switch on a screen: turning it on reads that screen straight away.
+export function toggleVO(screenText) {
+  if (setA11y('vo')) speak(screenText);
+}
+
+// Voice typing into the chat box ('chat') or the idea box ('idea'). Tap again to stop.
+let rec;
+export function dictate(target) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return flash('Voice typing needs Chrome or Edge', 'err');
+  if (rec) return rec.stop();
+  rec = new SR();
+  rec.lang = navigator.language || 'en-US';
+  rec.onresult = (e) => {
+    const key = target === 'idea' ? 'ideaDraft' : 'draft';
+    const next = (state[key] ? state[key] + ' ' : '') + e.results[0][0].transcript;
+    set({ [key]: target === 'idea' ? next.slice(0, 200) : next });
+  };
+  rec.onerror = (e) => {
+    if (e.error === 'not-allowed') flash('Allow the microphone to use voice typing', 'err');
+  };
+  rec.onend = () => {
+    rec = null;
+    set({ listening: null });
+  };
+  set({ listening: target });
+  rec.start();
 }
 
 // ---- Suggestions ----
 export function setReward(id, v) {
-  set({ rewards: { ...state.rewards, [id]: state.rewards[id] === v ? 0 : v } });
+  const next = state.rewards[id] === v ? 0 : v;
+  set({ rewards: { ...state.rewards, [id]: next } });
+  vo(next === 1 ? 'Marked helpful' : next === -1 ? 'Marked not helpful' : 'Rating cleared');
 }
 
 export function postIdea() {
@@ -319,6 +417,7 @@ export function postIdea() {
   const idea = { id: 'i' + Date.now(), text: text.slice(0, 200), author, votes: 0, time: now(), noted: false, mine: true };
   set({ ideas: [...state.ideas, idea], ideaDraft: '' });
   flash('Thanks! Your suggestion is posted', 'ok');
+  vo('Suggestion posted');
 }
 
 export function upvoteIdea(id) {
@@ -326,6 +425,13 @@ export function upvoteIdea(id) {
   const had = !!mv[id];
   if (had) delete mv[id]; else mv[id] = true;
   set({ myIdeaVotes: mv, ideas: state.ideas.map((it) => (it.id === id ? { ...it, votes: Math.max(0, it.votes + (had ? -1 : 1)) } : it)) });
+  vo(had ? 'Upvote removed' : 'Upvoted');
+}
+
+export function readIdeaList(ideas) {
+  const top = ideas.slice().sort((x, y) => y.votes - x.votes).slice(0, 5);
+  if (!top.length) return 'No ideas yet.';
+  return 'Top ideas. ' + top.map((it, i) => (i + 1) + ': ' + it.text + ', ' + it.votes + ' upvotes.').join(' ');
 }
 
 export function toggleNoted(id) {
@@ -350,5 +456,5 @@ export function joinAttendee() {
 
 export function signOut() {
   clearTimeout(toastTimer);
-  set({ role: null, loginMode: 'choose', pin: '', loginError: '', toast: null });
+  set({ role: null, loginMode: 'choose', pin: '', loginError: '', toast: null, a11yOpen: false, unread: 0 });
 }
