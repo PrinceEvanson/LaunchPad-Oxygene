@@ -32,6 +32,15 @@ To test on your phone, connect it to the same Wi-Fi and open the **Network** URL
 
 Deploy `dist/` to any static host (Vercel, Netlify, GitHub Pages).
 
+### Run with Docker (no Node needed)
+
+```bash
+docker build -t launchpad .
+docker run --rm -p 8080:80 launchpad
+```
+
+Open http://localhost:8080.
+
 ---
 
 ## Project structure
