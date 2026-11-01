@@ -2,7 +2,22 @@
 
 Phone-first event app for the Oxygène MCL product launch at Two Rivers Business Park, Nairobi.
 One app, two roles:
+Here's a Markdown table you can paste into the README:
 
+```markdown
+## Team
+
+| Member | Role | Contributions |
+| --- | --- | --- |
+| **Mathews Machanje (Mat)** | Lead / PM and Frontend | Brief questions, user stories and scope cuts; kept the team on schedule; wrote the stories, developer handoff and pitch; frontend development |
+| **Tracy Mboya** | UI/UX Designer | User journeys and design principles; all screens and their states; visual system (colours, type, touch targets, tribal band, branding); inclusive design for blind and deaf guests |
+| **Clyde Penda** | Frontend Developer | Check-in, polls and question builder, organizer dashboard, chat and suggestions, role-based sign-in, accessibility features, testing |
+| **Prince [Surname]** | Deployment and Frontend | Hosting and production build, GitHub repository and live link, frontend features and fixes, testing on real phones |
+
+Built for **Oxygène MCL** · Nairobi · October 2026
+```
+
+Replace the existing **Team** section at the bottom of the README with it, and put in Prince's surname. Trim any contribution a member didn't make.
 | Role | Signs in with | Tabs |
 | --- | --- | --- |
 | **Attendee** | One tap (first name optional) | Poll · Chat · Suggest |
