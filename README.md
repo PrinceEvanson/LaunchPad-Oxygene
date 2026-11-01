@@ -11,7 +11,7 @@ Here's a Markdown table you can paste into the README:
 | --- | --- | --- |
 | **Mathews Machanje (Mat)** | Lead / PM and Frontend | Brief questions, user stories and scope cuts; kept the team on schedule; wrote the stories, developer handoff and pitch; frontend development |
 | **Tracy Mboya** | UI/UX Designer and Documentation| User journeys and design principles of the Check-in, polls and question builder, organizer dashboard, chat and suggestions, role-based sign-in, accessibility features  ; all screens and their states; visual system (colors, type, touch targets, tribal band, branding); inclusive design for blind and deaf guests |
-| **Clyde Opendwa** | Frontend Developer | Check-in, polls and question builder, organizer dashboard, chat and suggestions, role-based sign-in, accessibility features, testing |
+| **Clyde Openda** | Frontend Developer | Check-in, polls and question builder, organizer dashboard, chat and suggestions, role-based sign-in, accessibility features, testing |
 | **Prince Evanson** | Deployment and Frontend | Hosting and production build, GitHub repository and live link, frontend features and fixes, testing on real phones |
 
 Built for **Oxygène MCL** · Nairobi · October 2026
